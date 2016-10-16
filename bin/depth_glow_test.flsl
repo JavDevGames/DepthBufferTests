@@ -3,6 +3,7 @@ use namespace flare;
 use namespace flare.transforms;
 
 param sampler2D depthTexture;
+param float4 color <ui="color"> = float4(0,0,0,0);
 
 technique main
 {

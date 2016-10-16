@@ -13,6 +13,7 @@ package
 	import flare.primitives.Cube;
 	import flare.primitives.Sphere;
 	import flare.system.Device3D;
+	import flare.system.Input3D;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Rectangle;
@@ -76,6 +77,7 @@ package
 			// external loading.
 			scene.addChildFromFile( new model);
 			scene.addEventListener( Scene3D.COMPLETE_EVENT, completeEvent );
+			scene.clearColor.setTo(0, 0, 0);
 			
 			mRenderMat = new Shader3D("", [new ColorFilter(0x990000)]);
 		}
@@ -140,7 +142,7 @@ package
 			}
 			
 			//debug the "depth" texture on-screen
-			scene.drawQuadTexture( texture1, 325, 0, 320, 240 );
+			scene.drawQuadTexture( texture1, stage.stageWidth-320, 0, 320, 240 );
 		}
 		
 		private function completeEvent(e:Event):void 
@@ -149,6 +151,7 @@ package
 			
 			scene.context.enableErrorChecking = true;
 			scene.addEventListener( Scene3D.RENDER_EVENT, renderEvent );
+			scene.addEventListener(Scene3D.UPDATE_EVENT, onUpdate);
 			
 			mrt = new FLSLMaterial( "", new flsl, null, true );
 			mrt.params.cube.value = new Texture3D( "skybox2b.png", false, Texture3D.FORMAT_RGBA, Texture3D.TYPE_CUBE );
@@ -174,6 +177,28 @@ package
 				curCube = new Cube("", 10, 10, 10, 1, mRenderMat);
 				curCube.setPosition((i % 5) * 20, 0, (int(i / 5) * 20));
 				scene.addChild(curCube);
+			}
+		}
+		
+		private function onUpdate(e:Event):void 
+		{
+			const speed:Number = 0.4;
+			if (Input3D.keyDown(Input3D.LEFT))
+			{
+				mSphere.x -= speed;
+			}
+			else if (Input3D.keyDown(Input3D.RIGHT))
+			{
+				mSphere.x += speed;
+			}
+			
+			if (Input3D.keyDown(Input3D.DOWN))
+			{
+				mSphere.y -= speed;
+			}
+			else if (Input3D.keyDown(Input3D.UP))
+			{
+				mSphere.y += speed;
 			}
 		}
 	}
