@@ -1,0 +1,24 @@
+
+use namespace flare;
+use namespace flare.transforms;
+
+param sampler2D depthTexture;
+
+technique main
+{
+	float4 pos = transform();
+	
+	output vertex = pos;
+	
+	interpolated float4 iPos = pos / 400;
+	interpolated float4 iNormal = float4( normalize( normal * worldView.xyz ), 1 );
+	
+    float diff = sampler2D(depthTexture, iUV0).r - iPos.w;
+	diff = floor(0.8 + diff);
+	
+	float4 intersect = max(0, diff);
+	
+	float4 col =  intersect;
+	
+	output fragment = col;
+}

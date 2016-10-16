@@ -1,0 +1,25 @@
+
+use namespace flare;
+use namespace flare.transforms;
+
+technique main
+{
+	samplerCube cube;
+	sampler2D texture;
+	
+	float4 pos = transform();
+	
+	output vertex = pos;
+	
+	interpolated float4 iPos = pos / 300;
+	interpolated float4 iNormal = float4( normalize( normal * worldView.xyz ), 1 );
+	
+	output fragment[4];
+	fragment[0] = sampler2D( texture, iUV0 );
+	fragment[1] = iPos.w;
+	fragment[2] = iNormal * 0.5 + 0.5;
+	fragment[3] = samplerCube( cube, iNormal.xyz );
+	
+	//output depth = 1 - iPos.w;
+}
+
