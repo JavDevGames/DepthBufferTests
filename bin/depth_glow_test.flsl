@@ -3,7 +3,6 @@ use namespace flare;
 use namespace flare.transforms;
 
 param sampler2D depthTexture;
-param float4 color <ui="color"> = float4(0,0,0,0);
 
 technique main
 {
@@ -11,15 +10,21 @@ technique main
 	
 	output vertex = pos;
 	
+	float3 ndc = pos.xyz / pos.w;
+	interpolated float viewPortCoordX = ndc.x * 0.5 + 0.5;
+	interpolated float viewPortCoordY = (1-ndc.y) * 0.5 + 1;
+	
 	interpolated float4 iPos = pos / 400;
 	interpolated float4 iNormal = float4( normalize( normal * worldView.xyz ), 1 );
 	
-    float diff = sampler2D(depthTexture, iUV0).r - iPos.w;
-	diff = floor(0.8 + diff);
+    float diff = sampler2D(depthTexture, float2(viewPortCoordX,viewPortCoordY)).r - iPos.w;
 	
-	float4 intersect = max(0, diff);
+	float4 intersect = 0;
 	
-	float4 col =  intersect;
+	intersect = 1 - smoothstep(0, 0.2, diff);
+	intersect *= ceil(diff);
+	
+	float4 col = float4(0.039,0.18,0.45,0.2) * 0.2 + intersect;
 	
 	output fragment = col;
 }
