@@ -11,10 +11,14 @@ package
 	import flare.materials.Material3D;
 	import flare.materials.Shader3D;
 	import flare.primitives.Cube;
+	import flare.primitives.Plane;
 	import flare.primitives.Sphere;
 	import flare.system.Device3D;
 	import flare.system.Input3D;
+	import flash.display.BlendMode;
 	import flash.display.Sprite;
+	import flash.display3D.Context3DCompareMode;
+	import flash.display3D.Context3DTriangleFace;
 	import flash.events.Event;
 	import flash.geom.Rectangle;
 	
@@ -31,6 +35,12 @@ package
 		[Embed(source = "../bin/depth.png")]
 		private var defaultTexture:Class;
 		
+		[Embed(source = "../bin/front_back.png")]
+		private var frontBackTexture:Class;
+		
+		[Embed(source = "../bin/floorTexture.png")]
+		private var floorAsset:Class;
+		
 		private var scene:Scene3D;
 		private var texture0:Texture3D;
 		private var texture1:Texture3D;
@@ -39,9 +49,14 @@ package
 		private var mrt:FLSLMaterial;
 		private var mDepthMaterial:FLSLMaterial;
 		
+		private var mTestMaterial:Shader3D;
+		
 		private var mSphere:Sphere;
 		private var startModel:Pivot3D;
 		private var mRenderMat:Shader3D;
+		
+		private var mFloor:Plane;
+		private var mFloorMaterial:Shader3D;
 		
 		public function DepthBufferTests() 
 		{
@@ -55,8 +70,8 @@ package
 			scene.showLogo = false;
 			
 			
-			var size:int = 2048;
-			var format:int = Texture3D.FORMAT_RGBA_HALF_FLOAT;
+			var size:int = 1024;
+			var format:int = Texture3D.FORMAT_RGBA;
 			texture0 = new Texture3D( new Rectangle( 0, 0, size, size ), true, format );
 			setupTexture(texture0);
 			
@@ -77,7 +92,7 @@ package
 			// external loading.
 			scene.addChildFromFile( new model);
 			scene.addEventListener( Scene3D.COMPLETE_EVENT, completeEvent );
-			scene.clearColor.setTo(0, 0, 0);
+			//scene.clearColor.setTo(0, 0, 0);
 			
 			mRenderMat = new Shader3D("", [new ColorFilter(0x990000)]);
 		}
@@ -86,7 +101,7 @@ package
 		{
 			tex.typeMode = Texture3D.TYPE_2D;
 			tex.mipMode = Texture3D.MIP_NONE;
-			tex.bias = 0;
+			//tex.bias = 0;
 		}
 		
 		private function renderEvent(e:Event):void 
@@ -118,6 +133,10 @@ package
 				{
 					p.draw(false);
 				}
+				else if (p is Plane)
+				{
+					p.draw(false);
+				}
 			}
 			// release GPU states.
 			scene.endFrame();
@@ -133,11 +152,16 @@ package
 				if (postElements is Sphere)
 				{
 					mDepthMaterial.params.depthTexture.mip = 0;
+					mDepthMaterial.blendMode = Material3D.BLEND_ADDITIVE;
 					postElements.draw(false, mDepthMaterial);
 				}
-				else
+				else if(postElements is Cube)
 				{
 					postElements.draw(false, mRenderMat);
+				}
+				else if (postElements is Plane)
+				{
+					postElements.draw(false, mFloorMaterial);
 				}
 			}
 			
@@ -166,6 +190,11 @@ package
 			
 			mDepthMaterial.blendMode = Material3D.BLEND_ADDITIVE;
 			
+			//var fbTex:Texture3D = new Texture3D(new frontBackTexture);			
+			//mTestMaterial = new Shader3D("", [new TextureMapFilter(fbTex, 0, BlendMode.ADD)]);
+			//mTestMaterial.blendMode = Material3D.BLEND_ADDITIVE;
+			//mTestMaterial.cullFace = Context3DTriangleFace.NONE;
+			
 			mSphere = new Sphere("", 40, 24, mDepthMaterial);
 			
 			scene.addChild(mSphere);
@@ -175,9 +204,14 @@ package
 			for (i = 0; i < 15; ++i)
 			{
 				curCube = new Cube("", 10, 10, 10, 1, mRenderMat);
-				curCube.setPosition((i % 5) * 20, 0, (int(i / 5) * 20));
+				curCube.setPosition((i % 5) * 20, 10, (int(i / 5) * 20));
 				scene.addChild(curCube);
 			}
+			
+			var floorTexture:Texture3D = new Texture3D(new floorAsset);
+			mFloorMaterial = new Shader3D("", [new TextureMapFilter(floorTexture)]);
+			mFloor = new Plane("", 1000, 1000, 10, mFloorMaterial, "+xz");
+			scene.addChild(mFloor);
 		}
 		
 		private function onUpdate(e:Event):void 
