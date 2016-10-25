@@ -15,12 +15,14 @@ package
 	import flare.primitives.Sphere;
 	import flare.system.Device3D;
 	import flare.system.Input3D;
+	import flash.display.BitmapData;
 	import flash.display.BlendMode;
 	import flash.display.Sprite;
 	import flash.display3D.Context3DCompareMode;
 	import flash.display3D.Context3DTriangleFace;
 	import flash.events.Event;
 	import flash.geom.Rectangle;
+	import flash.geom.Vector3D;
 	
 	public class DepthBufferTests extends Sprite 
 	{
@@ -51,7 +53,7 @@ package
 		
 		private var mTestMaterial:Shader3D;
 		
-		private var mSphere:Sphere;
+		private var mSphere:Pivot3D;
 		private var startModel:Pivot3D;
 		private var mRenderMat:Shader3D;
 		
@@ -69,23 +71,24 @@ package
 			scene.antialias = 2;
 			scene.showLogo = false;
 			
-			
 			var size:int = 1024;
+			var bmp:BitmapData = new BitmapData(size, size);
+			
 			var format:int = Texture3D.FORMAT_RGBA;
-			texture0 = new Texture3D( new Rectangle( 0, 0, size, size ), true, format );
+			texture0 = new Texture3D( bmp, true, format );
 			setupTexture(texture0);
 			
 			texture0.upload( scene );
 			
-			texture1 = new Texture3D( new Rectangle( 0, 0, size, size ), true, format );
+			texture1 = new Texture3D( bmp, true, format );
 			setupTexture(texture1);
 			texture1.upload( scene );
 			
-			texture2 = new Texture3D( new Rectangle( 0, 0, size, size ), true, format );
+			texture2 = new Texture3D( bmp, true, format );
 			setupTexture(texture2);
 			texture2.upload( scene );
 			
-			texture3 = new Texture3D( new Rectangle( 0, 0, size, size ), true, format );
+			texture3 = new Texture3D( bmp, true, format );
 			setupTexture(texture3);
 			texture3.upload( scene );
 			
@@ -100,7 +103,7 @@ package
 		private function setupTexture(tex:Texture3D):void 
 		{
 			tex.typeMode = Texture3D.TYPE_2D;
-			tex.mipMode = Texture3D.MIP_NONE;
+			//tex.mipMode = Texture3D.MIP_NONE;
 			//tex.bias = 0;
 		}
 		
@@ -149,7 +152,7 @@ package
 			//draw them twice, fix this soon
 			for each ( var postElements:Pivot3D in scene.renderList )
 			{
-				if (postElements is Sphere)
+				if (postElements ==  mSphere)
 				{
 					mDepthMaterial.params.depthTexture.mip = 0;
 					mDepthMaterial.blendMode = Material3D.BLEND_ADDITIVE;
@@ -166,7 +169,8 @@ package
 			}
 			
 			//debug the "depth" texture on-screen
-			scene.drawQuadTexture( texture1, stage.stageWidth-320, 0, 320, 240 );
+			var texWidth:int = 320;
+			scene.drawQuadTexture( texture1, stage.stageWidth-texWidth, 0, texWidth, 240 );
 		}
 		
 		private function completeEvent(e:Event):void 
@@ -204,7 +208,7 @@ package
 			for (i = 0; i < 15; ++i)
 			{
 				curCube = new Cube("", 10, 10, 10, 1, mRenderMat);
-				curCube.setPosition((i % 5) * 20, 10, (int(i / 5) * 20));
+				curCube.setPosition((i % 5) * 20, 10  + 10 * (int(i/5)), (int(i / 5) * 20));
 				scene.addChild(curCube);
 			}
 			
@@ -214,26 +218,42 @@ package
 			scene.addChild(mFloor);
 		}
 		
+		private static var POSITION_HELPER:Vector3D = new Vector3D();
 		private function onUpdate(e:Event):void 
 		{
 			const speed:Number = 0.4;
-			if (Input3D.keyDown(Input3D.LEFT))
+			if (Input3D.keyDown(Input3D.W))
 			{
-				mSphere.x -= speed;
+				POSITION_HELPER.x += scene.camera.getDir().x;
+				POSITION_HELPER.z += scene.camera.getDir().z;
 			}
-			else if (Input3D.keyDown(Input3D.RIGHT))
+			else if (Input3D.keyDown(Input3D.S))
 			{
-				mSphere.x += speed;
+				POSITION_HELPER.x -= scene.camera.getDir().x;
+				POSITION_HELPER.z -= scene.camera.getDir().z;
+			}
+			
+			if (Input3D.keyDown(Input3D.A))
+			{
+				POSITION_HELPER.x += scene.camera.getLeft().x;
+				POSITION_HELPER.z += scene.camera.getLeft().z;
+			}
+			else if (Input3D.keyDown(Input3D.D))
+			{
+				POSITION_HELPER.x -= scene.camera.getLeft().x;
+				POSITION_HELPER.z -= scene.camera.getLeft().z;
 			}
 			
 			if (Input3D.keyDown(Input3D.DOWN))
 			{
-				mSphere.y -= speed;
+				POSITION_HELPER.y -= speed;
 			}
 			else if (Input3D.keyDown(Input3D.UP))
 			{
-				mSphere.y += speed;
+				POSITION_HELPER.y += speed;
 			}
+			
+			mSphere.setPosition(POSITION_HELPER.x, POSITION_HELPER.y, POSITION_HELPER.z);
 		}
 	}
 }
