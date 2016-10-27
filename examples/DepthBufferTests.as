@@ -28,6 +28,7 @@ package
 	{
 		[Embed(source = "../bin/vaca.zf3d", mimeType = "application/octet-stream")]
 		private var model:Class;
+		
 		[Embed(source = "../bin/mrt.flsl.compiled", mimeType = "application/octet-stream")]
 		private var flsl:Class;
 		
@@ -42,6 +43,8 @@ package
 		
 		[Embed(source = "../bin/floorTexture.png")]
 		private var floorAsset:Class;
+		
+		private static var POSITION_HELPER:Vector3D = new Vector3D();
 		
 		private var scene:Scene3D;
 		private var texture0:Texture3D;
@@ -95,7 +98,7 @@ package
 			// external loading.
 			scene.addChildFromFile( new model);
 			scene.addEventListener( Scene3D.COMPLETE_EVENT, completeEvent );
-			//scene.clearColor.setTo(0, 0, 0);
+			scene.clearColor.setTo(0, 0, 0);
 			
 			mRenderMat = new Shader3D("", [new ColorFilter(0x990000)]);
 		}
@@ -103,8 +106,6 @@ package
 		private function setupTexture(tex:Texture3D):void 
 		{
 			tex.typeMode = Texture3D.TYPE_2D;
-			//tex.mipMode = Texture3D.MIP_NONE;
-			//tex.bias = 0;
 		}
 		
 		private function renderEvent(e:Event):void 
@@ -129,6 +130,7 @@ package
 			
 			// setup seom global matrices and constants configurations.
 			scene.setupFrame( scene.camera );
+			
 			// go trough each object to draw one by one.
 			for each ( var p:Pivot3D in scene.renderList )
 			{
@@ -141,6 +143,7 @@ package
 					p.draw(false);
 				}
 			}
+			
 			// release GPU states.
 			scene.endFrame();
 			
@@ -154,8 +157,6 @@ package
 			{
 				if (postElements ==  mSphere)
 				{
-					mDepthMaterial.params.depthTexture.mip = 0;
-					mDepthMaterial.blendMode = Material3D.BLEND_ADDITIVE;
 					postElements.draw(false, mDepthMaterial);
 				}
 				else if(postElements is Cube)
@@ -211,9 +212,37 @@ package
 			mFloorMaterial = new Shader3D("", [new TextureMapFilter(floorTexture)]);
 			mFloor = new Plane("", 1000, 1000, 10, mFloorMaterial, "+xz");
 			scene.addChild(mFloor);
+			
+			AddWalls();
 		}
 		
-		private static var POSITION_HELPER:Vector3D = new Vector3D();
+		private function AddWalls():void 
+		{
+			var leftWall:Pivot3D = new Plane("", 1000, 1000, 10, mFloorMaterial, "+xy");
+			leftWall.z = 500;
+			scene.addChild(leftWall);
+			
+			var rightWall:Pivot3D = new Plane("", 1000, 1000, 10, mFloorMaterial, "+xy");
+			rightWall.z = -500;
+			rightWall.rotateY(180);
+			scene.addChild(rightWall);
+			
+			var frontWall:Pivot3D = new Plane("", 1000, 1000, 10, mFloorMaterial, "+xy");
+			frontWall.x = -500;
+			frontWall.rotateY(-90);
+			scene.addChild(frontWall);
+			
+			var backWall:Pivot3D = new Plane("", 1000, 1000, 10, mFloorMaterial, "+xy");
+			backWall.x = 500;
+			backWall.rotateY(90);
+			scene.addChild(backWall);
+			
+			var ceiling:Pivot3D = new Plane("", 1000, 1000, 10, mFloorMaterial, "+xz");
+			ceiling.y = 500;
+			ceiling.rotateZ(180);
+			scene.addChild(ceiling);
+		}
+		
 		private function onUpdate(e:Event):void 
 		{
 			const speed:Number = 0.4;
