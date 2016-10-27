@@ -15,15 +15,16 @@ technique main
 	float3 ndc = pos.xyz / pos.w;
 	interpolated float viewPortCoordX = ndc.x * 0.5 + 0.5;
 	interpolated float viewPortCoordY = (1-ndc.y) * 0.5 + 1;
-	interpolated float viewPortCoordZ = (ndc.z);// * 0.5);
 	
-	interpolated float4 iPos = pos / 300;
+	interpolated float iPos = pos.w / 300.0;
 	
-    float diff = sampler2D(depthTexture, float2(viewPortCoordX,viewPortCoordY)).r - iPos.w;
+    float diff = sampler2D(depthTexture, float2(viewPortCoordX,viewPortCoordY)).r - iPos;
 	
 	float4 intersect = 0;
+	float originalDiff = diff;
 		
-	intersect =  1 - smoothstep(0, 0.1, diff);
+	diff *= 4;	
+	intersect =  1-smoothstep(0, 0.1, diff);
 	intersect *= ceil(diff);	
 	
 	float4 col = tint * tint.a + intersect;

@@ -74,7 +74,7 @@ package
 			var size:int = 1024;
 			var bmp:BitmapData = new BitmapData(size, size);
 			
-			var format:int = Texture3D.FORMAT_RGBA;
+			var format:int = Texture3D.FORMAT_RGBA_HALF_FLOAT;
 			texture0 = new Texture3D( bmp, true, format );
 			setupTexture(texture0);
 			
@@ -193,11 +193,6 @@ package
 			mDepthMaterial.params.depthTexture.value = texture1; 
 			
 			mDepthMaterial.blendMode = Material3D.BLEND_ADDITIVE;
-			
-			//var fbTex:Texture3D = new Texture3D(new frontBackTexture);			
-			//mTestMaterial = new Shader3D("", [new TextureMapFilter(fbTex, 0, BlendMode.ADD)]);
-			//mTestMaterial.blendMode = Material3D.BLEND_ADDITIVE;
-			//mTestMaterial.cullFace = Context3DTriangleFace.NONE;
 			
 			mSphere = new Sphere("", 40, 24, mDepthMaterial);
 			
