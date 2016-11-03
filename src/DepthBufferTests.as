@@ -190,10 +190,11 @@ package
 				mScene.removeChild(mScene.children[0]); 
 			}
 			
-			mGameScene = new GameScene(mScene, mFloorMaterial, mRenderMaterial);
 			
 			//setup the depth material
 			AddEffectsMesh();
+			
+			mGameScene = new GameScene(mScene, mFloorMaterial, mRenderMaterial);
 		}		
 		
 		private function AddEffectsMesh():void
@@ -208,7 +209,7 @@ package
 			var diff:Number = curTime - mLastTime;
 			
 			//for moving the sphere around, based on the camera's direction
-			const speed:Number = 0.4;
+			const speed:Number = 0.8 * (diff / 16);
 			
 			
 			if (Input3D.keyDown(Input3D.W))
