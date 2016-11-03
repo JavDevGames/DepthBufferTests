@@ -12,14 +12,8 @@ technique main
 	output vertex = pos;
 	
 	interpolated float4 iPos = pos / 300;
-	interpolated float4 iNormal = float4( normalize( normal * worldView.xyz ), 1 );
 	
-	output fragment[4];
+	output fragment[2];
 	fragment[0] = sampler2D( texture, iUV0 );
 	fragment[1] = iPos.w;
-	fragment[2] = iNormal * 0.5 + 0.5;
-	fragment[3] = samplerCube( cube, iNormal.xyz );
-	
-	//output depth = 1 - iPos.w;
 }
-
