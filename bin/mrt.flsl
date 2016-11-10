@@ -1,12 +1,14 @@
-
 use namespace flare;
 use namespace flare.transforms;
+use namespace flare.blendMode;
+
+sampler2D colorBuffer;
+sampler2D effectBuffer;
+sampler2D materialTexture;
+
 
 technique main
 {
-	samplerCube cube;
-	sampler2D texture;
-	
 	float4 pos = transform();
 	
 	output vertex = pos;
@@ -14,6 +16,17 @@ technique main
 	interpolated float4 iPos = pos / 300;
 	
 	output fragment[2];
-	fragment[0] = sampler2D( texture, iUV0 );
+	fragment[0] = sampler2D( materialTexture, iUV0 );
 	fragment[1] = iPos.w;
+}
+
+technique compose
+{
+	float4 color = sampler2D(colorBuffer, iUV0);
+	float4 effects = sampler2D(effectBuffer, iUV0);
+	
+	float4 gData = add(color, effects );
+	
+	output vertex = position.xyzw;
+	output fragment = float4(gData.rgb, 1);	
 }
