@@ -24,8 +24,6 @@ package
 	
 	public class DepthBufferTests extends Sprite 
 	{
-		[Embed(source = "../bin/vaca.zf3d", mimeType = "application/octet-stream")]
-		private var model:Class;
 		
 		[Embed(source = "../bin/mrt.flsl.compiled", mimeType = "application/octet-stream")]
 		private var flsl:Class;
@@ -63,7 +61,7 @@ package
 			Device3D.profile = "standard";
 			
 			//setup the scene
-			mScene = new Viewer3D( stage, null, 0.4 );
+			mScene = new Viewer3D(stage, null, 0.4);
 			mScene.skipFrames = false;
 			mScene.autoResize = true;
 			mScene.antialias = 2;
@@ -72,12 +70,30 @@ package
 			SetupTextures();
 			SetupMaterials();
 			
-			// external loading.
-			mScene.addChildFromFile( new model);
-			mScene.addEventListener( Scene3D.COMPLETE_EVENT, completeEvent );
+			mScene.addEventListener(Scene3D.RENDER_EVENT, SetupEvent);
 			mScene.clearColor.setTo(0, 0, 0);
 			
 			mLastTime = getTimer();
+		}
+		
+		private function SetupEvent(e:Event):void 
+		{
+			mScene.removeEventListener(Scene3D.RENDER_EVENT, SetupEvent);
+			
+			//set everythng else up
+			mScene.context.enableErrorChecking = true;
+			mScene.addEventListener(Scene3D.RENDER_EVENT, RenderEvent);
+			mScene.addEventListener(Scene3D.UPDATE_EVENT, OnUpdate);
+			
+			mScene.camera.setPosition( -170, 198, -268);
+			mScene.camera.lookAt(0, 0, 0);
+			
+			mMRT = new FLSLMaterial( "", new flsl, null, true ); 
+			
+			//setup the depth material
+			AddEffectsMesh();
+			
+			mGameScene = new GameScene(mScene, mFloorMaterial, mRenderMaterial);		
 		}
 		
 		private function SetupTextures():void
@@ -111,7 +127,7 @@ package
 			mFloorTexture = new Texture3D(new floorAsset);
 			mFloorMaterial = new Shader3D("", [new TextureMapFilter(mFloorTexture)]);
 			
-			mRedTexture = new Texture3D(new BitmapData(256, 256, false, 0xffff0000));
+			mRedTexture = new Texture3D(new BitmapData(256, 256, false, 0xffAA0000));
 			
 			mDepthMaterial = new FLSLMaterial("", new depthGlowFLSL, "main", true);			
 			mDepthMaterial.params.depthTexture.value = mDepthTexture;			
@@ -123,7 +139,7 @@ package
 			tex.typeMode = Texture3D.TYPE_2D;
 		}
 		
-		private function renderEvent(e:Event):void 
+		private function RenderEvent(e:Event):void 
 		{
 			e.preventDefault();
 			
@@ -132,11 +148,19 @@ package
 				return;
 			}
 			
-			mScene.setMaterial( mMRT );
-			
-			// this updates the input, animations and object states.
+			//Update the input, etc.
 			mScene.update();
 			
+			mScene.setMaterial( mMRT );
+			
+			//And begin the rendering process
+			RenderSceneToRenderTargets();
+			RenderEffectsToRenderTargets();
+			ComposeImageFromRenderTargets();
+		}
+		
+		private function RenderSceneToRenderTargets():void 
+		{
 			mScene.context.setRenderToTexture( mColorBuffer.texture, true, 0, 0, 0 );
 			mScene.context.setRenderToTexture( mDepthTexture.texture, true, 0, 0, 1 );
 			mScene.context.clear(0,0,0,1);
@@ -166,25 +190,22 @@ package
 			
 			mScene.context.setRenderToTexture( null, false, 0, 0, 0 );
 			mScene.context.setRenderToTexture( null, false, 0, 0, 1 );
-			
-			
-			mScene.context.setRenderToTexture( mEffectBuffer.texture, true, 0, 0, 0 );
+		}
+		
+		private function RenderEffectsToRenderTargets():void 
+		{
+			mScene.context.setRenderToTexture(mEffectBuffer.texture, true, 0, 0, 0 );
 			mScene.context.clear(0, 0, 0, 1);
 			
+			mSphere.draw(false, mDepthMaterial);
 			
-			//draw them twice, fix this soon
-			for each ( var postElements:Pivot3D in mScene.renderList )
-			{
-				if (postElements ==  mSphere)
-				{
-					postElements.draw(false, mDepthMaterial);
-				}
-			}
-			
-			mScene.context.setRenderToTexture( null, false, 0, 0, 0 );
-			
+			mScene.context.setRenderToTexture(null, false, 0, 0, 0 );
+		}
+		
+		private function ComposeImageFromRenderTargets():void 
+		{
 			//finally, compose the everything
-			mScene.context.setRenderToTexture( mTargetBuffer.texture, true, 0, 0, 0 );
+			mScene.context.setRenderToTexture(mTargetBuffer.texture, true, 0, 0, 0 );
 			mScene.context.clear(0, 0, 0, 1);
 			
 			mMRT.setTechnique("compose");
@@ -193,7 +214,7 @@ package
 			mMRT.params.effectBuffer.value = mEffectBuffer;
 			mMRT.drawQuad();
 			
-			mScene.context.setRenderToTexture( null, false, 0, 0, 0 );
+			mScene.context.setRenderToTexture(null, false, 0, 0, 0 );
 			mScene.context.clear(0, 0, 0, 1);
 			
 			mScene.context.setRenderToBackBuffer();
@@ -201,32 +222,13 @@ package
 			mScene.drawQuadTexture(mTargetBuffer, 0, 0, stage.stageWidth, stage.stageHeight);
 		}
 		
-		private function completeEvent(e:Event):void 
-		{
-			mScene.context.enableErrorChecking = true;
-			mScene.addEventListener( Scene3D.RENDER_EVENT, renderEvent );
-			mScene.addEventListener(Scene3D.UPDATE_EVENT, onUpdate);
-			
-			mMRT = new FLSLMaterial( "", new flsl, null, true ); 
-			
-			while (mScene.children.length)
-			{
-				mScene.removeChild(mScene.children[0]); 
-			}
-			
-			//setup the depth material
-			AddEffectsMesh();
-			
-			mGameScene = new GameScene(mScene, mFloorMaterial, mRenderMaterial);
-		}		
-		
 		private function AddEffectsMesh():void
 		{
 			mSphere = new Sphere("", 40, 24, mDepthMaterial);			
 			mScene.addChild(mSphere);
 		}		
 		
-		private function onUpdate(e:Event):void 
+		private function OnUpdate(e:Event):void 
 		{
 			var curTime:Number = getTimer();
 			var diff:Number = curTime - mLastTime;
