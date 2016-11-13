@@ -22,6 +22,8 @@ technique main
 	
 	float4 intersect = 0;
 	float originalDiff = diff;
+	
+	kill(diff);
 		
 	diff *= 4;	
 	intersect =  1-smoothstep(0, 0.1, diff);
