@@ -58,6 +58,9 @@ package
 		[Embed(source="../bin/floorTexture.png")]
 		private var floorAsset:Class;
 		
+		[Embed(source="../bin/outside_texture.png")]
+		private var outsideTextureAsset:Class;
+		
 		private static var POSITION_HELPER:Vector3D = new Vector3D();
 		
 		private var mScene:Scene3D;
@@ -77,6 +80,7 @@ package
 		
 		private var mLastTime:Number;
 		private var mFloorTexture:Texture3D;
+		private var mOutsideTexture:Texture3D;
 		private var mRedTexture:Texture3D;
 		
 		public function DepthBufferTests() 
@@ -150,6 +154,8 @@ package
 			
 			mFloorTexture = new Texture3D(new floorAsset);
 			mFloorMaterial = new Shader3D("", [new TextureMapFilter(mFloorTexture)]);
+			
+			mOutsideTexture = new Texture3D(new outsideTextureAsset);
 			
 			mRedTexture = new Texture3D(new BitmapData(256, 256, false, 0xffAA0000));
 			
@@ -236,12 +242,14 @@ package
 			
 			mMRT.params.colorBuffer.value = mColorBuffer;
 			mMRT.params.effectBuffer.value = mEffectBuffer;
+			mMRT.params.outsideTexture.value = mOutsideTexture;
+			mMRT.params.depthTexture.value = mDepthTexture;
 			mMRT.drawQuad();
 			
 			mScene.context.setRenderToTexture(null, false, 0, 0, 0 );
 			mScene.context.clear(0, 0, 0, 1);
 			
-			mScene.context.setRenderToBackBuffer();
+			mScene.context.setRenderToBackBuffer(); 
 			
 			mScene.drawQuadTexture(mTargetBuffer, 0, 0, stage.stageWidth, stage.stageHeight);
 		}
@@ -291,6 +299,25 @@ package
 			{
 				POSITION_HELPER.y += speed;
 			}
+			
+			var newScale:Number;
+			var mult:Number;
+			if (Input3D.keyDown(Input3D.LEFT))
+			{
+				mult = mSphere.scaleX;
+				mult *= 0.25;
+				newScale = mSphere.scaleX + (mult*mult)/100;
+				mSphere.setScale(newScale,newScale,newScale);
+			}
+			else if (Input3D.keyDown(Input3D.RIGHT))
+			{
+				mult = mSphere.scaleX;
+				mult *= 0.25;
+				newScale = mSphere.scaleX - (mult*mult)/100;
+				mSphere.setScale(newScale,newScale,newScale);
+			}
+			
+			
 			
 			//update the final position
 			mSphere.setPosition(POSITION_HELPER.x, POSITION_HELPER.y, POSITION_HELPER.z);

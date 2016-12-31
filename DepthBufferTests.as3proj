@@ -4,7 +4,7 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin\DepthBufferTests.swf" />
+    <movie path="bin\DepthBuf2ferTests.swf" />
     <movie fps="60" />
     <movie width="1024" />
     <movie height="768" />
