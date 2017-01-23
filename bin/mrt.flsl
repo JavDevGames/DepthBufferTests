@@ -29,7 +29,47 @@ use namespace flare.blendMode;
 sampler2D colorBuffer;
 sampler2D effectBuffer;
 sampler2D materialTexture;
+sampler2D bloomTexture < bias = 45, wrap = WRAP_CLAMP >;
 
+param float power = 2;
+param float intensity = 4;
+
+
+// blur constants.
+const float TEX_SIZE = 512;
+const float blurSize = 1 / TEX_SIZE;
+const float2 hSize0 = float2( blurSize, 0 );
+const float2 hSize1 = float2( blurSize * 2, 0 );
+const float2 vSize0 = float2( 0, blurSize );
+const float2 vSize1 = float2( 0, blurSize * 2 );
+
+// horizontal blur.
+float4 blurX( sampler2D texture ) {
+	float4 sum;
+	interpolated float2 i0 = uv0 - hSize0;
+	interpolated float2 i1 = uv0 + hSize0;
+	interpolated float2 i2 = uv0 - hSize1;
+	interpolated float2 i3 = uv0 + hSize1;
+	sum  = sampler2D( texture, i0 );
+	sum += sampler2D( texture, i1 );
+	sum += sampler2D( texture, i2 );
+	sum += sampler2D( texture, i3 );
+	return float4( sum.rgb * 0.5, 1 );
+}
+
+// vertical blur.
+float4 blurY( sampler2D texture ) {
+   float4 sum;
+	interpolated float2 i0 = uv0 - vSize0;
+	interpolated float2 i1 = uv0 + vSize0;
+	interpolated float2 i2 = uv0 - vSize1;
+	interpolated float2 i3 = uv0 + vSize1;
+	sum  = sampler2D( texture, i0 );
+	sum += sampler2D( texture, i1 );
+	sum += sampler2D( texture, i2 );
+	sum += sampler2D( texture, i3 );
+   return float4( sum.rgb * 0.25, 1 );
+}
 
 technique main
 {
@@ -39,18 +79,26 @@ technique main
 	
 	interpolated float4 iPos = pos / 300;
 	
-	output fragment[2];
+	
+	float4 blur = blurX(materialTexture);
+	
+	output fragment[3];
 	fragment[0] = sampler2D( materialTexture, iUV0 );
 	fragment[1] = iPos.w;
+	fragment[2] = pow( blur, power ) * intensity;
 }
 
 technique compose
 {
 	float4 color = sampler2D(colorBuffer, iUV0);
 	float4 effects = sampler2D(effectBuffer, iUV0);
+	float4 bloomEffect = sampler2D(bloomTexture, iUV0);
+
+	//float4 gData = add(color, effects );	
+	//gData = add(gData, bloomEffect);
 	
-	float4 gData = add(color, effects );
+	float4 gData = add(bloomEffect, color);	
 	
 	output vertex = position.xyzw;
-	output fragment = float4(gData.rgb, 1);	
+	output fragment = float4(gData.rgb, 1);
 }

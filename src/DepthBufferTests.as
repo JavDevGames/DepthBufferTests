@@ -55,8 +55,11 @@ package
 		[Embed(source="../bin/depth_glow_test.flsl.compiled", mimeType="application/octet-stream")]
 		private var depthGlowFLSL:Class;
 		
-		[Embed(source="../bin/floorTexture.png")]
+		[Embed(source="../bin/tron.jpg")]
 		private var floorAsset:Class;
+		
+		[Embed(source = "../bin/red_texture.png")]
+		private var redTexture:Class;
 		
 		private static var POSITION_HELPER:Vector3D = new Vector3D();
 		
@@ -65,6 +68,7 @@ package
 		private var mDepthTexture:Texture3D;
 		private var mEffectBuffer:Texture3D;
 		private var mTargetBuffer:Texture3D;
+		private var mBloomBuffer:Texture3D;
 		private var mMRT:FLSLMaterial;
 		
 		private var mDepthMaterial:FLSLMaterial;
@@ -135,6 +139,10 @@ package
 			SetupTexture(mDepthTexture);
 			mDepthTexture.upload( mScene );
 			
+			mBloomBuffer = new Texture3D(bmp, true, format);
+			SetupTexture(mBloomBuffer);
+			mBloomBuffer.upload(mScene);
+			
 			mEffectBuffer = new Texture3D(bmp, true, format);
 			SetupTexture(mEffectBuffer);
 			mEffectBuffer.upload(mScene);
@@ -151,11 +159,13 @@ package
 			mFloorTexture = new Texture3D(new floorAsset);
 			mFloorMaterial = new Shader3D("", [new TextureMapFilter(mFloorTexture)]);
 			
-			mRedTexture = new Texture3D(new BitmapData(256, 256, false, 0xffAA0000));
+			mRedTexture = new Texture3D(new redTexture);
 			
 			mDepthMaterial = new FLSLMaterial("", new depthGlowFLSL, "main", true);			
 			mDepthMaterial.params.depthTexture.value = mDepthTexture;			
 			mDepthMaterial.blendMode = Material3D.BLEND_ADDITIVE;
+			
+			
 		}
 		
 		private function SetupTexture(tex:Texture3D):void 
@@ -187,12 +197,14 @@ package
 		{
 			mScene.context.setRenderToTexture( mColorBuffer.texture, true, 0, 0, 0 );
 			mScene.context.setRenderToTexture( mDepthTexture.texture, true, 0, 0, 1 );
+			mScene.context.setRenderToTexture( mBloomBuffer.texture, true, 0, 0, 2 );
 			mScene.context.clear(0,0,0,1);
 			
 			mMRT.setTechnique("main");
 			
 			// setup some global matrices and constant configurations.
 			mScene.setupFrame( mScene.camera );
+			
 			
 			// go trough each object to draw one by one.
 			for each ( var p:Pivot3D in mScene.renderList )
@@ -214,6 +226,7 @@ package
 			
 			mScene.context.setRenderToTexture( null, false, 0, 0, 0 );
 			mScene.context.setRenderToTexture( null, false, 0, 0, 1 );
+			mScene.context.setRenderToTexture( null, false, 0, 0, 2 );
 		}
 		
 		private function RenderEffectsToRenderTargets():void 
@@ -236,6 +249,7 @@ package
 			
 			mMRT.params.colorBuffer.value = mColorBuffer;
 			mMRT.params.effectBuffer.value = mEffectBuffer;
+			mMRT.params.bloomTexture.value = mBloomBuffer;
 			mMRT.drawQuad();
 			
 			mScene.context.setRenderToTexture(null, false, 0, 0, 0 );
